@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "SensorTelemetry",
+  "namespace": "com.predictivelogistics.schemas",
+  "doc": "Sensor telemetry from van ECU (OBD-II + TPMS). Partition key: van_id. Cadence: every 5 seconds OR on threshold breach.",
+  "fields": [
+    {"name": "event_id",          "type": "string", "doc": "UUID — deduplication key"},
+    {"name": "van_id",            "type": "string", "doc": "UUID — Redis health key: health:van:{van_id}"},
+    {"name": "timestamp_utc",     "type": "long",   "doc": "Epoch ms. TTL guard: reading >15 min stale is unsafe for safety decisions"},
+    {"name": "ingested_utc",      "type": "long",   "doc": "Epoch ms — IoT Hub receipt time"},
+    {"name": "tyre_psi",          "type": {"type": "array", "items": "float"}, "doc": "Array[4]: [FL, FR, RL, RR] tyre pressures in PSI"},
+    {"name": "tyre_psi_min",      "type": "float",  "doc": "PRE-COMPUTED min of tyre_psi[4]. Stream Analytics reads this single field — not the array — at 1,000 events/sec. Critical optimisation."},
+    {"name": "engine_temp_c",     "type": "float",  "doc": "Engine coolant temperature Celsius. Isolation Forest anomaly input — spike pattern triggers hot path alert"},
+    {"name": "engine_rpm",        "type": "int",    "doc": "Revolutions per minute at reading time"},
+    {"name": "fuel_level_pct",    "type": "float",  "doc": "Tank fill 0-100. OR-Tools constraint: vans <10% excluded from routes >30km"},
+    {"name": "speed_kmh",         "type": "float",  "doc": "ECU-derived speed — more accurate than GPS-derived speed for anomaly detection"},
+    {"name": "odometer_km",       "type": "long",   "doc": "Cumulative distance. Feeds predictive maintenance model in Databricks cold path"},
+    {"name": "alert_flags",       "type": "int",    "doc": "Bitmask int16. Bit0=engine, Bit1=tyre, Bit2=fuel, Bit3=overheat. Single bitwise AND in Stream Analytics — no conditional branching. flags&2>0 = tyre warning"},
+    {"name": "health_score",      "type": "float",  "doc": "PRE-COMPUTED composite 0-100. Written to Redis health:van:{van_id}. Rerouting engine avoids degraded vans for heavy loads"},
+    {"name": "safe_to_continue",  "type": "boolean","doc": "PRE-COMPUTED by hot path → written to Redis. Fallback agent reads this ONE field — never recomputes sensor logic when rerouting engine is down"},
+    {"name": "firmware_version",  "type": "string", "doc": "ECU firmware. Isolation Forest model trained per firmware version — different baseline PSI/temp per vehicle type"},
+    {"name": "schema_version",    "type": "int",    "default": 1, "doc": "Schema version for safe rolling firmware upgrades"}
+  ]
+}

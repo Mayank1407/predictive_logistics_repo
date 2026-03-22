@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "PackageManifest",
+  "namespace": "com.predictivelogistics.schemas",
+  "doc": "Package manifest event. Published only on state change (LOADED/UNLOADED/PRIORITY_CHANGED) — NOT every 5 seconds. Partition key: van_id.",
+  "fields": [
+    {"name": "event_id",          "type": "string", "doc": "UUID — deduplication key"},
+    {"name": "van_id",            "type": "string", "doc": "UUID — links manifest to GPS position and sensor health for same van"},
+    {"name": "timestamp_utc",     "type": "long",   "doc": "Epoch ms. Freshness check — rerouting engine always uses latest manifest, not stale one"},
+    {"name": "ingested_utc",      "type": "long",   "doc": "Epoch ms — API Management receipt time"},
+    {"name": "event_type",        "type": {"type": "enum", "name": "ManifestEventType", "symbols": ["LOADED", "UNLOADED", "PRIORITY_CHANGED", "DELIVERY_CONFIRMED", "DELIVERY_FAILED"]}, "doc": "Why this event fired. Only changed manifests published — not full state on cadence"},
+    {"name": "package_id",        "type": "string", "doc": "UUID. Written to Redis priority:van:{van_id} sorted set as member"},
+    {"name": "priority_class",    "type": {"type": "enum", "name": "PriorityClass", "symbols": ["LIFE_CRITICAL", "PREMIUM", "STANDARD"]}, "doc": "ROUTING DECISION KEY. LIFE_CRITICAL → LangGraph dedicated path, throttle bypass. PREMIUM → OR-Tools tight window. STANDARD → OR-Tools fuel-optimised"},
+    {"name": "delivery_sla_utc",  "type": "long",   "doc": "Epoch ms deadline. REDIS SORTED SET SCORE. ZRANGEBYSCORE 0 now+600 returns all packages due in 10 min in deadline order — O(log N)"},
+    {"name": "dest_lat",          "type": "double", "doc": "Delivery destination latitude — OR-Tools waypoint input"},
+    {"name": "dest_lon",          "type": "double", "doc": "Delivery destination longitude — OR-Tools waypoint input"},
+    {"name": "dest_name",         "type": "string", "doc": "Human-readable destination name. Used in dispatcher alert payload"},
+    {"name": "time_to_sla_sec",   "type": "int",    "doc": "PRE-COMPUTED: (delivery_sla_utc - timestamp_utc) / 1000. LangGraph constraint solver reads this DIRECTLY — no arithmetic at decision time inside the 2-second hot path window"},
+    {"name": "weight_kg",         "type": "float",  "doc": "Package weight. OR-Tools capacity constraint — van capacity tracked cumulatively"},
+    {"name": "requires_cold_chain","type": "boolean","doc": "If true, van must maintain <8°C. Routing constraint — cannot park in direct sun >15 min"},
+    {"name": "special_handling",  "type": {"type": "array", "items": "string"}, "doc": "Array of handling codes e.g. FRAGILE, HAZMAT, OVERSIZED"},
+    {"name": "schema_version",    "type": "int",    "default": 1, "doc": "Schema version. Three consumer services (rerouting, LangGraph, manifest API) must agree on field positions"}
+  ]
+}

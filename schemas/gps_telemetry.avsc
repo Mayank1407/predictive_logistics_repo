@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "GpsTelemetry",
+  "namespace": "com.predictivelogistics.schemas",
+  "doc": "GPS telemetry event from van GPS unit. Partition key: geo_hash (H3 Level 9). Cadence: every 5 seconds.",
+  "fields": [
+    {"name": "event_id",        "type": "string",  "doc": "UUID — deduplication key across all streams"},
+    {"name": "van_id",          "type": "string",  "doc": "UUID — joins GPS to sensor and manifest streams"},
+    {"name": "timestamp_utc",   "type": "long",    "doc": "Epoch milliseconds — when reading was taken on device"},
+    {"name": "ingested_utc",    "type": "long",    "doc": "Epoch milliseconds — when IoT Hub received the event. Latency = ingested - timestamp"},
+    {"name": "lat",             "type": "double",  "doc": "Latitude float64 — full precision required at street level"},
+    {"name": "lon",             "type": "double",  "doc": "Longitude float64 — full precision required at street level"},
+    {"name": "geo_hash",        "type": "string",  "doc": "H3 Level-9 hex cell (~170m diameter). PARTITION KEY. Enables O(1) peer-van lookup via k-ring without cross-partition joins"},
+    {"name": "speed_kmh",       "type": "float",   "doc": "GPS-derived speed. Near-zero + stable heading = traffic stall candidate in Kalman filter"},
+    {"name": "heading_deg",     "type": "float",   "doc": "Compass bearing 0-360. Random heading = GPS jitter. Stable heading on road bearing = genuine stall"},
+    {"name": "gps_accuracy_m",  "type": "float",   "doc": "Accuracy reported by GPS chip in metres. >40m triggers jitter candidate flag — Signal 1 of 3-signal ensemble"},
+    {"name": "altitude_m",      "type": "float",   "doc": "Altitude in metres. Used for tunnel detection and map matching"},
+    {"name": "satellites_locked","type": "int",    "doc": "Number of satellites locked. <4 = unreliable fix, increases Kalman uncertainty covariance"},
+    {"name": "fix_type",        "type": {"type": "enum", "name": "FixType", "symbols": ["NO_FIX", "GPS_2D", "GPS_3D", "DGPS"]}, "doc": "GPS fix quality indicator"},
+    {"name": "schema_version",  "type": "int",     "default": 1, "doc": "Avro schema version. Safe firmware rollout — old consumers ignore new fields, no coordinated cutover needed"}
+  ]
+}
