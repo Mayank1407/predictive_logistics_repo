@@ -36,6 +36,7 @@ predictive-logistics-engine/
 ├── AGENTS.md                              ← AI agent context for Copilot/Claude
 │
 ├── 📚 DOCUMENTATION (new!)
+│   ├── FLOWS.md                           ← **Start here** End-to-end message flows
 │   ├── ARCHITECTURE.md                    ← Layered system architecture + data flow
 │   ├── TECH_STACK.md                      ← Technology rationale + cost breakdown
 │   ├── PROMPTS.md                         ← LLM prompts for AI agents
@@ -70,6 +71,7 @@ predictive-logistics-engine/
 
 | Document | Purpose | Key Topics |
 |----------|---------|-----------|
+| **[FLOWS.md](FLOWS.md)** | **Start here!** End-to-end message flows | Rerouting logic, notification flow, schema columns, conditionals |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | System design & data flows | Layers, Event Hub topics, hot/warm/cold paths |
 | **[TECH_STACK.md](TECH_STACK.md)** | Tech selection & ops | Azure services, cost $15K/mo, scaling |
 | **[PROMPTS.md](PROMPTS.md)** | AI agent reasoning | Life-critical prompts, few-shot examples, versioning |
